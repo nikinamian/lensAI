@@ -44,16 +44,17 @@ if img_file:
     img = Image.open(img_file)
     st.image(img, caption="Got it!", width='stretch') # Fixes the container width warning
     
-    # 4. The "Snap" AI Logic with Retry Mechanism
+    # 4. The AI Logic with Retry Mechanism
     if st.button("Generate Suggestions"):
-        with st.spinner("Analyzing your snap..."):
+        with st.spinner("Analyzing your photo..."):
             prompt = """
             You are a professional photographer and social media influencer. Analyze this image and provide:
             1. A "Vibe Check": A one-sentence summary of the aesthetic.
             2. Suggested Lenses: 3 creative AR lens ideas (e.g., 'Vintage Grain', 'Neon Glow').
-            3. Captions: 3 trendy captions for a Snap Story.
-            4. Suggestions: How can I pose better? What angle should I use? 
-            Keep the tone high-energy and Gen-Z focused. Don't be cringey. 
+            3. Captions: 3 trendy captions for a post.
+            4. Suggestions: How can I pose better? What angle should I use? Is the background good?
+            Keep the tone high-energy and Gen-Z focused. Don't make the captions cringey. 
+            Make the captions good like you see other people make them.
             """
             
             # Robust error handling for 429 Quota issues
