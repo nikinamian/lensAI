@@ -37,12 +37,24 @@ st.markdown('<h3 style="color: black;">Struggling to get the perfect photo?</h3>
 
 st.markdown('<p style="color: black;">Take a photo and get suggestions for lenses, captions, angles and more!</p>', unsafe_allow_html=True)
 
-# 3. Camera Interface
-img_file = st.camera_input("Ready?")
+# 3. Dual Input Interface
+st.markdown('<p style="color: black; font-weight: 600;">Upload or Take a Photo!</p>', unsafe_allow_html=True)
+
+# Create two columns or a choice for the user
+input_type = st.radio("Choose source:", ["Camera", "Upload File"], horizontal=True)
+
+img_file = None
+
+if input_type == "Camera":
+    img_file = st.camera_input("Ready?")
+else:
+    # This allows JPEG, JPG, and PNG files
+    img_file = st.file_uploader("Choose an image from your files...", type=["jpg", "jpeg", "png"])
 
 if img_file:
     img = Image.open(img_file)
-    st.image(img, caption="Got it!", width='stretch') # Fixes the container width warning
+    # This keeps your styled "Got it!" caption
+    st.image(img, caption="Got it!", width='stretch')
     
     # 4. The AI Logic with Retry Mechanism
     if st.button("Generate Suggestions"):
