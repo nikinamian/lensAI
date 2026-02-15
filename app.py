@@ -62,10 +62,9 @@ if img_file:
             prompt = """
             You are a professional photographer and social media influencer. Analyze this image and provide:
             1. A "Vibe Check": A one-sentence summary of the aesthetic.
-            2. Suggested Lenses: 3 creative AR lens ideas (e.g., 'Vintage Grain', 'Neon Glow').
-            3. Captions: 3 trendy captions for a post.
-            4. Suggestions: How can I pose better? What angle should I use? Is the background good?
-            Keep the tone high-energy and Gen-Z focused. Don't make the captions cringey. 
+            2. Captions: 3 captions for a post. Make them nonchalant, but creaitve. Don't make it cringey.
+            3. Suggestions: How can I pose better? What angle should I use? Is the background good?
+            Keep the tone high-energy and Gen-Z focused.
             Make the captions good like you see other people make them.
             """
             
