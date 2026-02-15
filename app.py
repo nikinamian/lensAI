@@ -5,55 +5,48 @@ import time
 from dotenv import load_dotenv
 from PIL import Image
 
-# setup & security
+# 1. SETUP & SECURITY
 load_dotenv()
-# use the latest google-genai Client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# setting up the page style 
+# Use the more stable 2.5-flash model for 2026 free tier
+STABLE_MODEL = "gemini-2.5-flash" 
+
+# 2. PAGE STYLE (Light Blue & White)
 st.set_page_config(page_title="LensAI", page_icon="📸")
 st.markdown("""
     <style>
     .stApp { background-color: #ADD8E6; }
-    h1 { color: #FFFFFF; font-family: 'Avenir Next', sans-serif; }
-    .stButton>button { background-color: #FFFFFF; color: black; border-radius: 20px; }
-    /* This targets the label of the camera input specifically */
-    .stCameraInput label p {
-    color: black !important;
-    font-weight: 600;}
-    [data-testid="stImageCaption"] {
-        color: black !important;
-        font-weight: 600;
-        justify-content: center; /* Optional: centers the text */
-        display: flex;}
+    h1, h3, p { color: black !important; font-family: 'Avenir Next', sans-serif; }
+    .stButton>button { background-color: #FFFFFF; color: black; border-radius: 20px; width: 100%; font-weight: bold; }
+    .stCameraInput label p { color: black !important; font-weight: 600; }
+    [data-testid="stImageCaption"] { color: black !important; font-weight: 600; justify-content: center; display: flex; }
     </style>
     """, unsafe_allow_html=True)
 
-st.markdown('<h1 style="color: black;">📸LensAI: Creative📸</h1>', unsafe_allow_html=True)
-st.markdown('<h3 style="color: black;">Struggling to get the perfect photo?</h3>', unsafe_allow_html=True)
-st.markdown('<p style="color: black;">Take a photo and get suggestions for lenses, captions, angles and more!</p>', unsafe_allow_html=True)
+st.markdown('<h1>📸 LensAI: Creative 📸</h1>', unsafe_allow_html=True)
+st.markdown('<h3>Struggling to get the perfect photo?</h3>', unsafe_allow_html=True)
+st.markdown('<p>Take a photo and get suggestions for lenses, captions, angles and more!</p>', unsafe_allow_html=True)
 
-# 3. Dual Input Interface
-st.markdown('<p style="color: black; font-weight: 600;">Upload or Take a Photo!</p>', unsafe_allow_html=True)
-
-# Create two columns or a choice for the user
+# 3. DUAL INPUT INTERFACE
+st.markdown('<p style="font-weight: 600;">Upload or Take a Photo!</p>', unsafe_allow_html=True)
 input_type = st.radio("Choose source:", ["Camera", "Upload File"], horizontal=True)
 
 img_file = None
-
 if input_type == "Camera":
     img_file = st.camera_input("Ready?")
 else:
-    # This allows JPEG, JPG, and PNG files
     img_file = st.file_uploader("Choose an image from your files...", type=["jpg", "jpeg", "png"])
 
+# 4. MAIN LOGIC
 if img_file:
     img = Image.open(img_file)
-    # This keeps your styled "Got it!" caption
     st.image(img, caption="Got it!", use_container_width=True)
     
-    # 4. The AI Logic with Retry Mechanism
     if st.button("Generate Suggestions"):
+        # Initial Cooldown to prevent rapid double-clicks
+        time.sleep(1) 
+        
         with st.spinner("Analyzing your photo..."):
             prompt = """
             You are a professional photographer and social media influencer. Analyze this image and provide:
@@ -64,28 +57,31 @@ if img_file:
             Make the captions good like you see other people make them.
             """
             
-            # Robust error handling for 429 Quota issues
+            # --- START OF EXPONENTIAL BACKOFF LOGIC ---
             success = False
             max_retries = 3
+            initial_wait = 5 # seconds
+            
             for attempt in range(max_retries):
                 try:
-                    # Using 2.0-flash-lite for stability
                     response = client.models.generate_content(
-                        model='gemini-2.0-flash-lite', 
+                        model=STABLE_MODEL, 
                         contents=[prompt, img]
                     )
                     st.subheader("✨ Creative Suggestions")
                     st.write(response.text)
                     success = True
-                    break # Exit the loop if successful
+                    break # Exit loop on success
+                    
                 except Exception as e:
                     if "429" in str(e):
-                        wait_time = (attempt + 1) * 5 # Exponential backoff
-                        st.warning(f"Quota reached. Retrying in {wait_time}s... (Attempt {attempt + 1}/{max_retries})")
+                        # Exponentially increase wait time: 5s, 10s, 20s
+                        wait_time = initial_wait * (2 ** attempt) 
+                        st.warning(f"Quota reached. Re-trying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
                         time.sleep(wait_time)
                     else:
                         st.error(f"Something went wrong: {e}")
                         break
             
             if not success:
-                st.error("Still hitting limits. Try again in 60 seconds!")
+                st.error("Still hitting limits. Google's Free Tier is very busy right now. Try again in 60 seconds!")
