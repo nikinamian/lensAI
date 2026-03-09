@@ -5,14 +5,15 @@ import time
 from dotenv import load_dotenv
 from PIL import Image
 
-# 1. SETUP & SECURITY
+# initialize our setup and security 
 load_dotenv()
+# get the API key
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Use the more stable 2.5-flash model for 2026 free tier
+# use the more stable 2.5-flash model for 2026 free tier
 STABLE_MODEL = "gemini-2.5-flash" 
 
-# 2. PAGE STYLE (Light Blue & White)
+# decide our page style
 st.set_page_config(page_title="LensAI", page_icon="📸")
 st.markdown("""
     <style>
@@ -24,12 +25,15 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# introduce the users using headers
 st.markdown('<h1>📸 LensAI: Creative 📸</h1>', unsafe_allow_html=True)
 st.markdown('<h3>Struggling to get the perfect photo?</h3>', unsafe_allow_html=True)
 st.markdown('<p>Take a photo and get suggestions for lenses, captions, angles and more!</p>', unsafe_allow_html=True)
 
-# 3. DUAL INPUT INTERFACE
+# offer users two ways to input a photo 
+# take a photo 
 st.markdown('<p style="font-weight: 600;">Upload or Take a Photo!</p>', unsafe_allow_html=True)
+# or choose a photo from your phone 
 input_type = st.radio("Choose source:", ["Camera", "Upload File"], horizontal=True)
 
 img_file = None
@@ -38,16 +42,19 @@ if input_type == "Camera":
 else:
     img_file = st.file_uploader("Choose an image from your files...", type=["jpg", "jpeg", "png"])
 
-# 4. MAIN LOGIC
+# main logic 
 if img_file:
+    # get the photo and notify user 
     img = Image.open(img_file)
     st.image(img, caption="Got it!", use_container_width=True)
     
+    # offer user to generate suggestion for their photo 
     if st.button("Generate Suggestions"):
-        # Initial Cooldown to prevent rapid double-clicks
+        # initial cooldown to prevent rapid double-clicks
         time.sleep(1) 
         
         with st.spinner("Analyzing your photo..."):
+            # prompt the AI
             prompt = """
             You are a professional photographer and social media influencer. Analyze this image and provide:
             1. A "Vibe Check": A one-sentence summary of the aesthetic.
@@ -57,7 +64,7 @@ if img_file:
             Make the captions good like you see other people make them.
             """
             
-            # --- START OF EXPONENTIAL BACKOFF LOGIC ---
+            # START OF EXPONENTIAL BACKOFF LOGIC
             success = False
             max_retries = 3
             initial_wait = 5 # seconds
