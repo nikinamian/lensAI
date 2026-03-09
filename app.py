@@ -42,6 +42,10 @@ if input_type == "Camera":
 else:
     img_file = st.file_uploader("Choose an image from your files...", type=["jpg", "jpeg", "png"])
 
+# initialize chat history for the session
+if "messages" not in st.session_state:
+    st.session_state.messages = [] 
+
 # main logic 
 if img_file:
     # get the photo and notify user 
