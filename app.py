@@ -31,9 +31,7 @@ st.markdown('<h3>Struggling to get the perfect photo?</h3>', unsafe_allow_html=T
 st.markdown('<p>Take a photo and get suggestions for lenses, captions, angles and more!</p>', unsafe_allow_html=True)
 
 # offer users two ways to input a photo 
-# take a photo 
 st.markdown('<p style="font-weight: 600;">Upload or Take a Photo!</p>', unsafe_allow_html=True)
-# or choose a photo from your phone 
 input_type = st.radio("Choose source:", ["Camera", "Upload File"], horizontal=True)
 
 img_file = None
@@ -42,7 +40,7 @@ if input_type == "Camera":
 else:
     img_file = st.file_uploader("Choose an image from your files...", type=["jpg", "jpeg", "png"])
 
-# initialize chat history for the session
+# initialize chat history so the AI remembers what you said
 if "messages" not in st.session_state:
     st.session_state.messages = [] 
 
@@ -79,14 +77,13 @@ if img_file:
                         model=STABLE_MODEL, 
                         contents=[prompt, img]
                     )
-                    st.subheader("✨ Creative Suggestions")
-                    st.write(response.text)
+                    # store this in session state so it stays in the chat history
+                    st.session_state.messages.append({"role": "assistant", "content": response.text})
                     success = True
-                    break # Exit loop on success
+                    break 
                     
                 except Exception as e:
                     if "429" in str(e):
-                        # Exponentially increase wait time: 5s, 10s, 20s
                         wait_time = initial_wait * (2 ** attempt) 
                         st.warning(f"Quota reached. Re-trying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
                         time.sleep(wait_time)
@@ -96,3 +93,29 @@ if img_file:
             
             if not success:
                 st.error("Still hitting limits. Google's Free Tier is very busy right now. Try again in 60 seconds!")
+
+    # display the conversation so far
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # allow the user to ask follow up questions
+    if user_input := st.chat_input("Ask me anything about your photo!"):
+        # add user message to chat
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        with st.chat_message("user"):
+            st.markdown(user_input)
+
+        # get a response from the AI based on the photo
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                try:
+                    # we send the user's question AND the image together
+                    response = client.models.generate_content(
+                        model=STABLE_MODEL, 
+                        contents=[user_input, img]
+                    )
+                    st.markdown(response.text)
+                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                except Exception as e:
+                    st.error(f"Couldnt get a response: {e}")
